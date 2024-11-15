@@ -16,7 +16,7 @@ NAME_DELTA_DIR="backup_delta"                                 # Название
 NAME_MAIN_LOG_FILE="backup.log"                               # Название лог-файла
 NAME_ERROR_LOG_FILE="backup_error.log"                        # Название лог-файла с ошибками
 NAME_RSYNC_LOG_FILE="rsync.log"                               # Название лог-файла с результатами работы RSYNC
-NAME_CREDENTIALS_FILE="credentials.conf"                      # Название файла с конфигурации c массивом данных для подключения к базам данных
+NAME_CREDENTIALS_FILE="credentials.conf"                      # Название файла конфигурации c подключением к удалённому серверу и массивом данных для подключения к базам данных 
 
 ## Параметры скрипта закрытых для изменения 
 
