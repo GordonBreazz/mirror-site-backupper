@@ -70,7 +70,7 @@ cd site_backuper
 LOCAL_DIR_PATH="/home/site-backup" 
 
 # Название локальной папки для Бекапа
-NAME_LOCAL_DIR="timeweb-newvsgaki"  
+NAME_LOCAL_DIR="my-local-backup-dir"  
 
 # Название папки для зеркала удалённого сервера 
 NAME_MIRROR_DIR="site-mirror"       
