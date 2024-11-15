@@ -3,6 +3,9 @@
 function run_files_download {
     log "Начинается копирование файлов сайтов и дампов баз данных..." "START"
 
+    # Очищаем RSYNC log перед началом работы
+    > "$RSYNC_LOG_FILE"
+
     #rsync -avz --progress -e ssh "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR/" "$BACKUP_DIR/" 2>&1 | while IFS= read -r line; do
     #    log_rsync "$line"
     #done
@@ -13,7 +16,7 @@ function run_files_download {
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
         log_success "Бекап завершён успешно. Файлы и дампы сохранены в $BACKUP_DIR"
         log "Список скопированных файлов записан в $RSYNC_LOG_FILE" "INFO"
-        $ISFIRST=0
+        $IS_FIRST=0
     else
         #echo "Ошибка: бекап не выполнен." | tee -a "$LOGS_FILE"
         log_error "Ошибка: бекап не выполнен."

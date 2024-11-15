@@ -1,31 +1,3 @@
-# Функция для создания символических ссылок
-function create_simlinks() {
-  
-  # Проверяем, что файл со списком существует
-  if [[ ! -f "$UPDATED_FILES_LIST" ]]; then
-    log "Ошибка: файл $UPDATED_FILES_LIST не существует!"
-    return 1
-  fi
-  
-  # Проверяем, что каталог для символических ссылок существует, если нет, создаём его
-  mkdir -p "$DELTA_DIR"
-  
-  # Чтение строк из файла и создание символических ссылок
-  while IFS= read -r file; do
-    # Проверяем, существует ли файл
-    if [[ -e "$file" ]]; then
-      # Получаем имя файла из пути
-      local filename=$(basename "$file")
-      
-      # Создаем символическую ссылку в каталоге simlinks
-      ln -s "$file" "$DELTA_DIR/$filename"
-      log_success "Создана ссылка: $DELTA_DIR/$filename -> $file"
-    else
-      log_error "Файл не найден: $file"
-    fi
-  done < "$UPDATED_FILES_LIST"
-}
-
 # Функция для создания файла update_files.txt с абсолютными путями к скопированным файлам
 function extract_copied_files {
     # Убедимся, что файл rsync.log существует
@@ -54,7 +26,59 @@ function extract_copied_files {
     log "Файл со списком обновлённых файлов создан: $UPDATED_FILES_LIST" "SUCCESS"
 }
 
-function delta_symlinks() {
+# Функция для создания символических ссылок
+function create_simlinks() {
+    # Проверяем, что файл со списком существует
+    if [[ ! -f "$UPDATED_FILES_LIST" ]]; then
+        log_error "Ошибка: файл $UPDATED_FILES_LIST не существует!"
+        return 1
+    fi
+
+    log "Начинается создание папки с симлинками на удалённые файлы..." "START" 
+
+    # Проверяем, что каталог для символических ссылок существует и доступен для записи
+    if [[ ! -d "$DELTA_DIR" ]]; then
+        mkdir -p "$DELTA_DIR" || { log_error "Ошибка: не удалось создать папку $DELTA_DIR"; return 1; }
+    fi
+
+    if [[ ! -w "$DELTA_DIR" ]]; then
+        log_error "Ошибка: папка $DELTA_DIR недоступна для записи!"
+        return 1
+    fi
+
+    # Очищаем папку с символическими ссылками перед началом работы
+    find "$DELTA_DIR" -type l -delete || { log_error "Ошибка при очистке папки $DELTA_DIR"; return 1; }
+
+    local success_count=0
+    local fail_count=0
+
+    # Чтение строк из файла и создание символических ссылок
+    while IFS= read -r file; do
+        # Проверяем, существует ли файл
+        if [[ -e "$file" ]]; then
+            # Получаем имя файла из пути
+            local filename=$(basename "$file")
+            
+            # Создаем символическую ссылку в каталоге simlinks
+            ln -s "$file" "$DELTA_DIR/$filename"
+            if [[ $? -eq 0 ]]; then
+                log_success "Создана ссылка: $DELTA_DIR/$filename -> $file"
+                ((success_count++))
+            else
+                log_error "Ошибка: не удалось создать ссылку для $file"
+                ((fail_count++))
+            fi
+        else
+            log_error "Файл не найден: $file"
+            ((fail_count++))
+        fi
+    done < "$UPDATED_FILES_LIST"
+
+    # Вывод итогового сообщения
+    log "Создание символических ссылок завершено: успешно создано $success_count ссылок, не удалось создать $fail_count ссылок." "END"
+}
+
+function create_delta_symlinks() {
     extract_copied_files 
     create_simlinks
 }
