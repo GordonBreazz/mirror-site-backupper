@@ -62,7 +62,7 @@ git clone https://github.com/GordonBreazz/site-backaper.git
 cd site_backuper
 
 ```
-2. Откройте файл скрипта (backup_script.sh) и настройте следующие параметры в начале скрипта:
+2. создайте файл credentials.conf (переменуйте файл-пример "dummy-credentials.conf") и настройте следующие параметры в начале скрипта:
 
 ```bash
 
