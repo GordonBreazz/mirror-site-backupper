@@ -65,8 +65,9 @@ function create_db_dumps {
     log "Начинается создание дампов баз данных на удалённом сервере $REMOTE_HOST" "START"
 
     # Проверка, что массив DATABASES существует и содержит данные
+    echo $DATABASES
     if [ -z "${DATABASES[*]}" ]; then
-        log_error "Ошибка: Массив DATABASES не определён или пуст. Проверьте файл $DB_CREDENTIALS_FILE." "ERROR"
+        log_error "Ошибка: Массив DATABASES не определён или пуст. Проверьте файл $CREDENTIALS_FILE." "ERROR"
         exit 1
     fi
 
@@ -97,4 +98,10 @@ EOF
         fi
     done
     log "Завершение создания дампов БД" "END"
+}
+
+function run_db_backup {
+    log "Начинается задача создания бекапов баз данных" "START"
+    create_db_dumps
+    log "Завершена задача создания бекапов баз данных" "END"
 }

@@ -24,7 +24,7 @@ function scan_file_list {
         return 1
     fi
 
-    # Сканирование файлов
+     # Сканирование файлов
      clamscan  --file-list="$LOGS_DIR/update_files.txt" --log="$VIRUS_SCAN_LOG" --move="$LOCAL_DIR/infected_files"
 
 
@@ -45,7 +45,7 @@ function scan_dir() {
         return 1
     fi
 
-    log "Начинается проверка директории $1 на вирусы..." "START"
+    log "Начинается проверка директории $1"
 
     # Путь к файлу лога для результатов сканирования
     VIRUS_SCAN_LOG="$LOGS_DIR/virus_scan_$DATE.log"
@@ -56,8 +56,6 @@ function scan_dir() {
     # Запуск сканирования с использованием ClamAV
     # Логируем результат работы clamscan
     clamscan -r "$1" --log="$VIRUS_SCAN_LOG" --move="$BACKUP_DIR/infected_files" --recursive
-
-    log "Завершена проверка директории $1 на вирусы..." "END"
 
     # Проверка статуса сканирования
     if [ $? -eq 0 ]; then
@@ -72,7 +70,8 @@ function scan_dir() {
 function run_antivirus() {
     # Обновление баз данных ClamAV
     log "Обновление баз данных ClamAV..."
-    freshclam --verbose > "$LOGS_DIR/freshclam_output.log" 2>&1
+    #freshclam --verbose > "$LOGS_DIR/freshclam_output.log" 2>&1
+    log "Начинается проверка на вирусы..." "START"
 
     if [[ "$IS_FIRST" -eq 1 ]]; then
         # Если бекап первый, то вызываем функцию scan_dir
@@ -80,5 +79,6 @@ function run_antivirus() {
     else
         # Иначе бекап инкрементальный, вызываем функцию scan_file_list
         scan_file_list        
-fi     
+    fi
+    log "Завершена проверка на вирусы..." "END"     
 }
