@@ -28,15 +28,15 @@ EOF
 
 # Функция для очистки старых дампов баз данных на удалённом сервере
 function cleanup_db_dumps {
-    log "Начинается очистка старых дампов баз данных на удалённом сервере..."
+    log "Начинается очистка временых файлоы дампов баз данных на удалённом сервере..." "START"
 
     ssh "$REMOTE_USER@$REMOTE_HOST" bash <<EOF
         # Проверяем, существует ли папка с дампами
         if [ -d "$REMOTE_DIR/$NAME_DB_DIR" ]; then
-            # Удаляем только файлы, начинающиеся с 'dump_' и заканчивающиеся на '.sql'
-            find "$REMOTE_DIR/$NAME_DB_DIR" -type f -name "dump_*.sql" -exec rm -f {} \;
+            # Удаляем файлы, соответствующие маскам
+            find "$REMOTE_DIR/$NAME_DB_DIR" -type f \( -name "dump_*.sql" -o -name "dump_*.zip" \) -delete
             if [ \$? -eq 0 ]; then
-                echo "Очистка завершена: все файлы с префиксом 'dump_' удалены из $REMOTE_DIR/$NAME_DB_DIR."
+                echo "Очистка завершена: файлы с префиксом 'dump_' и расширениями '.sql' или '.zip' удалены из $REMOTE_DIR/$NAME_DB_DIR."
             else
                 echo "Ошибка: не удалось удалить файлы с префиксом 'dump_' в $REMOTE_DIR/$NAME_DB_DIR."
             fi
@@ -44,6 +44,7 @@ function cleanup_db_dumps {
             echo "Папка $REMOTE_DIR/$NAME_DB_DIR не найдена."
         fi
 EOF
+    log "Очистка временых файлоы дампов дампов баз данных завершена." "END"
 }
 
 # Функция записи результатов очистки в локальный лог-файл
@@ -61,7 +62,7 @@ function cleanup_and_log {
 }
 
 # Функция для создания дампов баз данных
-function create_db_dumps {
+function create_db_dumps_row {
     log "Начинается создание дампов баз данных на удалённом сервере $REMOTE_HOST" "START"
 
     # Проверка, что массив DATABASES существует и содержит данные
@@ -100,8 +101,48 @@ EOF
     log "Завершение создания дампов БД" "END"
 }
 
+function create_db_dumps {
+    # Проверка, что массив DATABASES существует и содержит данные
+    if [ -z "${DATABASES[*]}" ]; then
+        log_error "Ошибка: Массив DATABASES не определён или пуст. Проверьте файл $CREDENTIALS_FILE." "ERROR"
+        exit 1
+    fi
+
+    # Обработка массива с данными для подключения к базам данных
+    for DB_NAME in "${!DATABASES[@]}"; do
+        DB_CREDENTIALS="${DATABASES[$DB_NAME]}"
+        DB_USER="${DB_CREDENTIALS%%:*}"         # Извлекаем пользователя
+        DB_PASSWORD="${DB_CREDENTIALS#*:}"      # Извлекаем пароль
+
+        log "Создание дампа базы данных $DB_NAME..."
+        
+        DUMP_FILE="dump_${DB_NAME}.sql"
+        ARCHIVE_FILE="$REMOTE_DIR/$NAME_DB_DIR/dump_${DB_NAME}.zip"
+
+        # Запуск дампа базы данных на удалённом сервере
+        ssh "$REMOTE_USER@$REMOTE_HOST" << EOF
+            mkdir -p "$REMOTE_DIR/$NAME_DB_DIR"                                  # Создаём папку для дампов, если её нет
+            export MYSQL_PWD="$DB_PASSWORD"                                     # Устанавливаем пароль через переменную среды
+            mysqldump --no-tablespaces -u "$DB_USER" "$DB_NAME" > "$DUMP_FILE"  # Дамп базы
+
+            # Проверка корректности дампа
+            if head -n 1 "$DUMP_FILE" | grep -q "^-- MySQL dump" && tail -n 1 "$DUMP_FILE" | grep -q "^-- Dump completed"; then
+                echo "Дамп базы данных $DB_NAME корректен."
+                zip -e -P "$DB_PASSWORD" "$ARCHIVE_FILE" "$DUMP_FILE"            # Создаём зашифрованный ZIP-архив с паролем
+            else
+                echo "Дамп базы данных $DB_NAME повреждён. Переименовываю файл."
+                mv "$DUMP_FILE" "${DUMP_FILE%.*}_broken.sql"                     # Переименование повреждённого дампа
+            fi
+            
+            rm -f "$DUMP_FILE"                                                  # Удаляем временные файлы (исключая повреждённые)
+EOF
+    
+        log "Дамп базы данных $DB_NAME сохранён как зашифрованный архив $ARCHIVE_FILE"
+    done
+}
+
 function run_db_backup {
-    log "Начинается задача создания бекапов баз данных" "START"
+    log "Начинается создание дампов баз данных на удалённом сервере $REMOTE_HOST" "START"
     create_db_dumps
-    log "Завершена задача создания бекапов баз данных" "END"
+    log "Завершение создания дампов БД" "END"
 }

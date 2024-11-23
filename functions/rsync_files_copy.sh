@@ -1,8 +1,6 @@
 
 # Функция для копирования файлов сайта и дампов баз данных на локальный сервер
 function run_files_download {
-    log "Начинается копирование файлов сайтов и дампов баз данных..." "START"
-
     # Проверка переменных
     if [ -z "$REMOTE_USER" ] || [ -z "$REMOTE_HOST" ] || [ -z "$REMOTE_DIR" ] || [ -z "$BACKUP_DIR" ]; then
         log_error "Одна или несколько переменных не заданы. Проверьте настройки."
@@ -57,5 +55,4 @@ function run_files_download {
     END_TIME=$(date +%s)
     log_success "Бекап завершён успешно за $((END_TIME - START_TIME)) секунд. Файлы сохранены в $BACKUP_DIR"
     log "Список скопированных файлов записан в $RSYNC_LOG_FILE" "INFO"
-    log "Завершение копирования файлов" "END"
 }
