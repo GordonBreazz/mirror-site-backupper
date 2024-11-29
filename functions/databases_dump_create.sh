@@ -7,7 +7,7 @@ function dump_database() {
     ssh "$REMOTE_USER@$REMOTE_HOST" << EOF
         mkdir -p "$REMOTE_DIR/$NAME_DB_DIR"                                  # Создаём папку для дампов, если её нет
         export MYSQL_PWD="$DB_PASSWORD"                                     # Устанавливаем пароль через переменную среды
-        mysqldump --no-tablespaces -u "$DB_USER" "$DB_NAME" > "$DUMP_FILE"  # Дамп базы
+        mysqldump --no-tablespaces -u "$DB_USER" "$DB_NAME" > "$NAME_DB_DIR\$DUMP_FILE"  # Дамп базы
 EOF
     echo "$DUMP_FILE"
 }
@@ -55,7 +55,7 @@ function create_db_dumps() {
         log "Создание дампа базы данных $DB_NAME..."
 
         # 1. Создание дампа
-        DUMP_FILE=$(dump_database "$DB_NAME" "$DB_USER" "$DB_PASSWORD")
+        dump_database "$DB_NAME" "$DB_USER" "$DB_PASSWORD"
 
         # 2. Проверка корректности дампа
         #validate_and_rename_dump "$DUMP_FILE" "$DB_NAME"
