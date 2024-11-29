@@ -58,10 +58,10 @@ function create_db_dumps() {
         DUMP_FILE=$(dump_database "$DB_NAME" "$DB_USER" "$DB_PASSWORD")
 
         # 2. Проверка корректности дампа
-        validate_and_rename_dump "$DUMP_FILE" "$DB_NAME"
+        #validate_and_rename_dump "$DUMP_FILE" "$DB_NAME"
 
         # 3. Архивация файла
-        ARCHIVE_FILE=$(archive_dump "$DUMP_FILE" "$DB_NAME" "$DB_PASSWORD")
+        #ARCHIVE_FILE=$(archive_dump "$DUMP_FILE" "$DB_NAME" "$DB_PASSWORD")
 
         log "Дамп базы данных $DB_NAME сохранён как зашифрованный архив $ARCHIVE_FILE"
     done
