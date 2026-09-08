@@ -1,2 +1,3 @@
-# ignore credentials.conf file
 credentials.conf
+production-backup/
+*.log
