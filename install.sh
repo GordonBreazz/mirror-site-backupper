@@ -21,17 +21,32 @@ if [ -f "$CREDENTIALS_FILE" ]; then
     echo
 fi
 
+# Запрашивает обязательное значение в цикле, пока не введут непустое.
+# Ввод "exit"/"quit" (в любом регистре) — выход из установщика.
+function prompt_required() {
+    local prompt_text="$1"
+    local __resultvar="$2"
+    local value
+    while true; do
+        read -rp "$prompt_text" value
+        if [[ "$value" =~ ^(exit|quit)$ ]]; then
+            echo "Выход из установщика."
+            exit 0
+        fi
+        if [ -n "$value" ]; then
+            printf -v "$__resultvar" '%s' "$value"
+            return
+        fi
+        echo "Значение обязательно (или введите 'exit' для выхода). Повторите ввод."
+    done
+}
+
 # --- 2. Параметры подключения к серверу ---
-read -rp "Пользователь на удалённом сервере (REMOTE_USER): " REMOTE_USER
-read -rp "Хост/IP удалённого сервера (REMOTE_HOST): " REMOTE_HOST
+prompt_required "Пользователь на удалённом сервере (REMOTE_USER): " REMOTE_USER
+prompt_required "Хост/IP удалённого сервера (REMOTE_HOST): " REMOTE_HOST
 read -rp "SSH-порт [22]: " REMOTE_PORT
 REMOTE_PORT="${REMOTE_PORT:-22}"
-read -rp "Корневая папка со всеми сайтами на сервере (REMOTE_ROOT_DIR), например /var/www: " REMOTE_ROOT_DIR
-
-if [ -z "$REMOTE_USER" ] || [ -z "$REMOTE_HOST" ] || [ -z "$REMOTE_ROOT_DIR" ]; then
-    echo "REMOTE_USER, REMOTE_HOST и REMOTE_ROOT_DIR обязательны. Прервано."
-    exit 1
-fi
+prompt_required "Корневая папка со всеми сайтами на сервере (REMOTE_ROOT_DIR), например /var/www: " REMOTE_ROOT_DIR
 echo
 
 # --- 3. SSH-ключ ---
