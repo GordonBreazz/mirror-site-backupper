@@ -49,6 +49,10 @@ REMOTE_PORT="${REMOTE_PORT:-22}"
 prompt_required "Корневая папка со всеми сайтами на сервере (REMOTE_ROOT_DIR), например /var/www: " REMOTE_ROOT_DIR
 echo
 
+# --- 2б. Локальная папка для бэкапов (необязательно) ---
+read -rp "Папка на ЭТОЙ машине для хранения бэкапов [по умолчанию: \$HOME/backup]: " LOCAL_DIR_PATH
+echo
+
 # --- 3. SSH-ключ ---
 existing_keys=()
 for name in id_ed25519 id_rsa id_ecdsa id_ed25519_sk; do
@@ -111,6 +115,10 @@ echo
     echo
     if [ -n "$SSH_KEY_LINE" ]; then
         echo "$SSH_KEY_LINE"
+        echo
+    fi
+    if [ -n "$LOCAL_DIR_PATH" ]; then
+        echo "LOCAL_DIR_PATH=\"$LOCAL_DIR_PATH\""
         echo
     fi
     echo "REMOTE_USER=\"$REMOTE_USER\""

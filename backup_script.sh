@@ -6,10 +6,11 @@ set -uo pipefail
 ### ============================================================
 
 ## Параметры на локальной машине
-LOCAL_DIR_PATH="$HOME/backup"              # Корень для бэкапов — домашняя папка
-                                            # ТЕКУЩЕГО пользователя, под которым
-                                            # запущен скрипт (переносимо между
-                                            # серверами/пользователями без правки)
+LOCAL_DIR_PATH="${LOCAL_DIR_PATH:-$HOME/backup}"  # Корень для бэкапов. По умолчанию —
+                                            # домашняя папка текущего пользователя.
+                                            # Можно переопределить в credentials.conf
+                                            # (например, отдельный диск под бэкапы) —
+                                            # ниже путь пересчитывается ПОСЛЕ source.
 NAME_LOCAL_DIR="production-backup"         # Название локальной папки бэкапа
 
 ## Путь к приватному SSH-ключу.
@@ -20,6 +21,8 @@ NAME_LOCAL_DIR="production-backup"         # Название локальной
 ## (это конфиг конкретного развёртывания), а не здесь.
 SSH_KEY_PATH="${SSH_KEY_PATH:-}"
 
+## Производные пути от NAME_* — вычисляются один раз ниже (после того,
+## как LOCAL_DIR_PATH станет окончательным, см. пересчёт после source).
 NAME_MIRROR_DIR="site-mirror"              # Зеркало сайтов; дампы БД (REMOTE_DUMP_DIR)
                                             # приезжают сюда же, т.к. лежат внутри REMOTE_ROOT_DIR
 NAME_LOGS_DIR="logs"                       # Логи
@@ -28,13 +31,6 @@ NAME_ERROR_LOG_FILE="backup_error.log"
 NAME_RSYNC_LOG_FILE="rsync.log"
 NAME_CREDENTIALS_FILE="credentials.conf"
 
-## Производные пути (не менять руками)
-LOCAL_DIR="$LOCAL_DIR_PATH/$NAME_LOCAL_DIR"
-BACKUP_DIR="$LOCAL_DIR/$NAME_MIRROR_DIR"
-LOGS_DIR="$LOCAL_DIR/$NAME_LOGS_DIR"
-MAIN_LOG_FILE="$LOGS_DIR/$NAME_MAIN_LOG_FILE"
-ERROR_LOG_FILE="$LOGS_DIR/$NAME_ERROR_LOG_FILE"
-RSYNC_LOG_FILE="$LOGS_DIR/$NAME_RSYNC_LOG_FILE"
 CREDENTIALS_FILE="./$NAME_CREDENTIALS_FILE"
 DATE=$(date +"%Y%m%d_%H%M%S")
 
@@ -46,7 +42,18 @@ SSH_CONTROL_PATH="$SSH_CONTROL_DIR/%r@%h:%p"
 SSH_CONNECT_TIMEOUT=15
 
 source "$CREDENTIALS_FILE"   # REMOTE_USER, REMOTE_HOST, REMOTE_PORT,
-                              # REMOTE_ROOT_DIR, DATABASES[] (declare -A)
+                              # REMOTE_ROOT_DIR, DATABASES[] (declare -A),
+                              # опционально: LOCAL_DIR_PATH, SSH_KEY_PATH
+
+## Производные локальные пути — СЧИТАЕМ ТОЛЬКО ТЕПЕРЬ, после source,
+## чтобы переопределение LOCAL_DIR_PATH в credentials.conf реально
+## подействовало (а не было посчитано по старому значению до него).
+LOCAL_DIR="$LOCAL_DIR_PATH/$NAME_LOCAL_DIR"
+BACKUP_DIR="$LOCAL_DIR/$NAME_MIRROR_DIR"
+LOGS_DIR="$LOCAL_DIR/$NAME_LOGS_DIR"
+MAIN_LOG_FILE="$LOGS_DIR/$NAME_MAIN_LOG_FILE"
+ERROR_LOG_FILE="$LOGS_DIR/$NAME_ERROR_LOG_FILE"
+RSYNC_LOG_FILE="$LOGS_DIR/$NAME_RSYNC_LOG_FILE"
 
 ## Папка под дампы БД на удалённом сервере — ВСЕГДА подпапка
 ## REMOTE_ROOT_DIR, вычисляется автоматически. Указывать её отдельно
