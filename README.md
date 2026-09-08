@@ -32,6 +32,7 @@ git-версионирование кода) сюда не входит — он
 
 ```
 backup_script.sh              # главный скрипт
+install.sh                    # интерактивная настройка credentials.conf
 functions/
 ├── logging.sh                 # log() / log_error()
 ├── connection.sh               # SSH ControlMaster: open/close/remote_ssh
@@ -46,10 +47,18 @@ credentials.conf.example       # пример конфига — скопиру�
    ```bash
    git clone https://github.com/GordonBreazz/mirror-site-backupper.git
    cd mirror-site-backupper
-   chmod +x backup_script.sh
+   chmod +x backup_script.sh install.sh
    ```
 
-2. Скопируйте и заполните конфиг:
+2. Настройте `credentials.conf` — двумя способами на выбор:
+
+   **А) Автоматически, через установщик** (спросит параметры подключения,
+   поможет создать/скопировать SSH-ключ, соберёт список баз данных):
+   ```bash
+   ./install.sh
+   ```
+
+   **Б) Вручную**, скопировав пример и отредактировав:
    ```bash
    cp credentials.conf.example credentials.conf
    nano credentials.conf
