@@ -33,7 +33,10 @@ function run_db_backup() {
 # удалённой стороне за один ssh-вызов.
 function build_remote_dump_script() {
     local script
-    script="set -eu; mkdir -p '${REMOTE_DUMP_DIR}';"
+    # pipefail критично: без него `mysqldump | gzip > file` вернёт код
+    # ВОЗВРАТА gzip (обычно 0), даже если mysqldump упал с ошибкой —
+    # gzip просто сожмёт пустой ввод, а скрипт решит, что всё хорошо.
+    script="set -eu -o pipefail; mkdir -p '${REMOTE_DUMP_DIR}';"
 
     local db_name db_user db_pass
     for db_name in "${!DATABASES[@]}"; do
@@ -42,9 +45,14 @@ function build_remote_dump_script() {
 
         # Однократный экранированный блок на каждую БД —
         # но это ЧАСТЬ ОДНОГО скрипта, не отдельное ssh-подключение.
-        script+=$(printf ' echo "[dump] %q"; mysqldump --single-transaction --quick --user=%q --password=%q %q | gzip > %q/%q.sql.gz;' \
+        # Проверка размера файла после дампа — доп. страховка от
+        # тихого "успеха" с пустым дампом, если pipefail почему-то
+        # не сработал (например, очень старый bash на сервере).
+        script+=$(printf ' echo "[dump] %q"; mysqldump --single-transaction --quick --user=%q --password=%q %q | gzip > %q/%q.sql.gz; sz=$(stat -c%%s %q/%q.sql.gz); if [ "$sz" -lt 100 ]; then echo "ОШИБКА: дамп %q подозрительно маленький ($sz байт) — вероятно, mysqldump не смог подключиться" >&2; exit 1; fi;' \
             "$db_name" "$db_user" "$db_pass" "$db_name" \
-            "$REMOTE_DUMP_DIR" "$db_name")
+            "$REMOTE_DUMP_DIR" "$db_name" \
+            "$REMOTE_DUMP_DIR" "$db_name" \
+            "$db_name")
     done
 
     printf '%s' "$script"
