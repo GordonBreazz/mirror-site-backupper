@@ -21,6 +21,12 @@ function _init_ssh_opts() {
         -o "ConnectTimeout=$SSH_CONNECT_TIMEOUT"
         -o "StrictHostKeyChecking=accept-new"
         -o "BatchMode=yes"
+        # Keepalive: без этого долгий rsync на большом количестве файлов
+        # может быть принят за "зависшее" соединение хостингом/сетевым
+        # оборудованием и обрублен по бездействию. Пинг каждые 30 сек,
+        # соединение считается мёртвым после 4 пропущенных подряд (~2 мин).
+        -o "ServerAliveInterval=30"
+        -o "ServerAliveCountMax=4"
     )
     SSH_MUX_OPTS=(
         -o "ControlMaster=auto"
