@@ -39,6 +39,8 @@ functions/
 ├── databases_dump_create.sh    # дамп всех БД одним удалённым сеансом
 └── rsync_files_copy.sh         # копирование файлов + список изменений
 credentials.conf.example       # пример конфига — скопируйте в credentials.conf
+deploy/
+└── mirror-site-backupper.logrotate  # ротация логов (см. раздел "Ротация логов")
 ```
 
 ## Настройка
@@ -138,8 +140,51 @@ crontab -e
 ```
 
 ```
-0 2 * * * cd /путь/к/mirror-site-backupper && ./backup_script.sh >> /путь/к/cron.log 2>&1
+0 5 * * * flock -n /tmp/backup_script.lock /путь/к/mirror-site-backupper/backup_script.sh >> /путь/к/cron.log 2>&1
 ```
+
+`flock -n` не даёт запуститься второй копии скрипта, если предыдущий прогон
+ещё не завершился к моменту следующего срабатывания cron.
+
+### Несколько аккаунтов на одном сервере
+
+Если бэкапите несколько хостинг-аккаунтов с одного сервера — держите для
+каждого свою папку с отдельным клоном репозитория и своим `credentials.conf`,
+например:
+```
+~/backup/timeweb/mirror-site-backupper/
+~/backup/другой-хостинг/mirror-site-backupper/
+```
+У каждой — своя строка в `crontab -e` и свой `production-backup/`.
+
+## Ротация логов
+
+Два вида логов растут бесконечно, если их не ограничивать:
+- `cron.log` (если настроили вывод cron в файл, см. выше) — дописывается
+  каждый день;
+- `production-backup/logs/changed_files_<дата>.log` — новый файл на
+  каждый прогон.
+
+(Логи в `production-backup/logs/backup.log`, `backup_error.log`, `rsync.log`
+сюда не входят — они перезаписываются заново при каждом запуске, расти
+бесконечно не могут.)
+
+Установите готовую конфигурацию `logrotate` (одна маска покрывает сразу
+все аккаунты вида `~/backup/*/...`, добавлять новый аккаунт в конфиг
+отдельно не нужно):
+
+```bash
+sudo cp deploy/mirror-site-backupper.logrotate /etc/logrotate.d/mirror-site-backupper
+sudo logrotate -d /etc/logrotate.d/mirror-site-backupper   # проверка без реальных действий
+```
+
+`logrotate` на Debian уже установлен и запускается сам через системный
+`/etc/cron.daily/logrotate` — больше ничего настраивать не нужно.
+
+⚠️ Пути внутри `deploy/mirror-site-backupper.logrotate` (`/home/nix/backup/*/...`)
+рассчитаны на структуру `~/backup/<аккаунт>/...` под пользователем `nix`.
+Если у вас другой пользователь или другая корневая папка — поправьте пути
+в файле перед установкой.
 
 ## Безопасность
 

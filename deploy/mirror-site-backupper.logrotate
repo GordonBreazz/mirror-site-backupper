@@ -1,0 +1,33 @@
+# Ротация логов mirror-site-backupper — ОДИН конфиг на ВСЕ аккаунты сразу.
+#
+# Структура на сервере — несколько независимых копий скрипта,
+# по одной на каждый обслуживаемый хостинг-аккаунт:
+#   ~/backup/timeweb/production-backup/logs/...
+#   ~/backup/<другой-аккаунт>/production-backup/logs/...
+#   ~/backup/<третий-аккаунт>/cron.log
+#
+# Маска "*" в путях ниже подставляет любое имя аккаунта — logrotate
+# сам найдёт все подходящие файлы под /home/nix/backup/*/..., включая
+# те, что появятся в будущем при добавлении нового аккаунта. Новый
+# аккаунт добавлять сюда отдельно НЕ нужно — конфиг общий для всех.
+#
+# Установка (от root):
+#   sudo cp mirror-site-backupper.logrotate /etc/logrotate.d/mirror-site-backupper
+#   sudo logrotate -d /etc/logrotate.d/mirror-site-backupper   # проверка без реальных действий
+
+/home/nix/backup/*/cron.log {
+    weekly
+    rotate 8
+    compress
+    missingok
+    notifempty
+    copytruncate
+}
+
+/home/nix/backup/*/production-backup/logs/changed_files_*.log {
+    daily
+    rotate 30
+    compress
+    missingok
+    notifempty
+}
