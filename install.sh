@@ -142,19 +142,31 @@ echo
 
 # --- 5. Базы данных ---
 declare -A DATABASES_MAP=()
-echo "Теперь добавим базы данных для дампа."
+echo "Приступаем к вводу параметров подключения для создания дампа БД:"
+read -rp "Скрывать вводимый пароль БД? [Y/n]: " hide_db_password
+if [[ "$hide_db_password" =~ ^[Nn]$ ]]; then
+    HIDE_DB_PASSWORD=0
+else
+    HIDE_DB_PASSWORD=1
+fi
+echo
+
 while true; do
     read -rp "Имя базы данных (Enter — закончить ввод баз): " db_name
     [ -z "$db_name" ] && break
     read -rp "  Пользователь БД для '$db_name': " db_user
-    read -rsp "  Пароль БД для '$db_name': " db_pass
-    echo
+    if [ "$HIDE_DB_PASSWORD" -eq 1 ]; then
+        read -rsp "  Пароль БД для '$db_name': " db_pass
+        echo
+    else
+        read -rp "  Пароль БД для '$db_name': " db_pass
+    fi
     DATABASES_MAP["$db_name"]="${db_user}:${db_pass}"
 done
 
 if [ "${#DATABASES_MAP[@]}" -eq 0 ]; then
     echo "Ни одной базы не добавлено — credentials.conf будет содержать пустой DATABASES[]."
-    echo "Добавьте базы вручную перед запуском backup_script.sh."
+    echo "Добавьте базы вручную перед запуском backup.sh."
 fi
 echo
 
