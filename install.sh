@@ -3,12 +3,59 @@
 # Запускать из корня репозитория:
 #   ./install.sh
 
+# Проверяет наличие rsync на ЭТОЙ (локальной) машине и ставит при отсутствии.
+check_and_install_rsync() {
+    if command -v rsync >/dev/null 2>&1; then
+        echo "rsync уже установлен: $(rsync --version | head -n1)"
+        return 0
+    fi
+
+    echo "rsync не найден, устанавливаю..."
+
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get install -y rsync
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y rsync
+    elif command -v yum >/dev/null 2>&1; then
+        sudo yum install -y rsync
+    elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --noconfirm rsync
+    elif command -v apk >/dev/null 2>&1; then
+        sudo apk add rsync
+    else
+        echo "Не удалось определить пакетный менеджер. Установите rsync вручную." >&2
+        return 1
+    fi
+
+    if ! command -v rsync >/dev/null 2>&1; then
+        echo "Установка rsync не удалась." >&2
+        return 1
+    fi
+}
+
+# Проверяет наличие rsync на удалённом сервере (только предупреждает, не блокирует установку —
+# доступ по SSH-ключу на этом этапе ещё может быть не настроен).
+check_remote_rsync() {
+    if ssh -o BatchMode=yes -o ConnectTimeout=5 -p "$REMOTE_PORT" \
+        "${REMOTE_USER}@${REMOTE_HOST}" command -v rsync >/dev/null 2>&1; then
+        echo "rsync на удалённом сервере найден."
+    else
+        echo "Внимание: не удалось подтвердить наличие rsync на удалённом сервере" >&2
+        echo "(либо rsync не установлен, либо ещё не настроен доступ по SSH-ключу — это нормально на данном шаге)." >&2
+        echo "Убедитесь, что rsync установлен на сервере до первого запуска backup_script.sh." >&2
+    fi
+}
+
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CREDENTIALS_FILE="$SCRIPT_DIR/credentials.conf"
 
 echo "═══ Настройка mirror-site-backupper ═══"
+echo
+
+# --- 0. Проверка/установка rsync на локальной машине ---
+check_and_install_rsync || exit 1
 echo
 
 # --- 1. Проверка, что credentials.conf ещё не существует ---
@@ -87,6 +134,9 @@ if [[ ! "$do_copy" =~ ^[Nn]$ ]]; then
     else
         echo "ssh-copy-id не найден. Скопируйте ключ вручную (см. README раздел 'Настройка SSH-ключей')."
     fi
+    echo
+    # Ключ (предположительно) уже на сервере — можно проверить rsync удалённо.
+    check_remote_rsync
 fi
 echo
 
