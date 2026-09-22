@@ -31,7 +31,7 @@ git-версионирование кода) сюда не входит — он
 ## Структура проекта
 
 ```
-backup_script.sh              # главный скрипт
+backup.sh              # главный скрипт
 install.sh                    # интерактивная настройка credentials.conf
 functions/
 ├── logging.sh                 # log() / log_error()
@@ -49,7 +49,7 @@ deploy/
    ```bash
    git clone https://github.com/GordonBreazz/mirror-site-backupper.git
    cd mirror-site-backupper
-   chmod +x backup_script.sh install.sh
+   chmod +x backup.sh install.sh
    ```
 
 2. Настройте `credentials.conf` — двумя способами на выбор:
@@ -70,10 +70,10 @@ deploy/
    `SSH_KEY_PATH` указывать не обязательно — если в `~/.ssh` только один
    ключ, скрипт найдёт его сам.
 
-3. Проверьте локальные пути в начале `backup_script.sh` — это **обязательный шаг**,
+3. Проверьте локальные пути в начале `backup.sh` — это **обязательный шаг**,
    не пропускайте его:
    ```bash
-   nano backup_script.sh
+   nano backup.sh
    ```
    Параметры в блоке настроек (`БЛОК НАСТРОЕК СКРИПТА`):
    - `LOCAL_DIR_PATH` — корень для бэкапов. По умолчанию `"$HOME/backup"`
@@ -94,19 +94,19 @@ deploy/
 Сделайте файл скрипта исполняемым (если ещё не сделали на шаге 1):
 
 ```bash
-chmod u+x backup_script.sh
+chmod u+x backup.sh
 ```
 
 Запустите скрипт:
 
 ```bash
-bash backup_script.sh
+bash backup.sh
 ```
 
 либо
 
 ```bash
-./backup_script.sh
+./backup.sh
 ```
 
 Скрипт выполнит следующие действия:
@@ -140,7 +140,7 @@ crontab -e
 ```
 
 ```
-0 5 * * * flock -n /tmp/backup_script.lock /путь/к/mirror-site-backupper/backup_script.sh >> /путь/к/cron.log 2>&1
+0 5 * * * flock -n /tmp/backup_script.lock /путь/к/mirror-site-backupper/backup.sh >> /путь/к/cron.log 2>&1
 ```
 
 `flock -n` не даёт запуститься второй копии скрипта, если предыдущий прогон
@@ -196,7 +196,7 @@ sudo logrotate -d /etc/logrotate.d/mirror-site-backupper   # проверка б
   chmod 600 credentials.conf
   ```
 - Резервные копии на диске не шифруются — при необходимости добавьте
-  шифрование отдельным шагом после `backup_script.sh`.
+  шифрование отдельным шагом после `backup.sh`.
 
 ## Поддержка
 
