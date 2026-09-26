@@ -1,6 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 ### ============================================================
 ### БЛОК НАСТРОЕК СКРИПТА
 ### ============================================================
@@ -31,7 +33,7 @@ NAME_ERROR_LOG_FILE="backup_error.log"
 NAME_RSYNC_LOG_FILE="rsync.log"
 NAME_CREDENTIALS_FILE="credentials.conf"
 
-CREDENTIALS_FILE="./$NAME_CREDENTIALS_FILE"
+CREDENTIALS_FILE="$SCRIPT_DIR/$NAME_CREDENTIALS_FILE"
 DATE=$(date +"%Y%m%d_%H%M%S")
 
 ## SSH-мультиплексирование: ключ ко всей переделке.
@@ -63,10 +65,10 @@ NAME_REMOTE_DUMP_DIR="_db_dumps_tmp"
 REMOTE_DUMP_DIR="${REMOTE_ROOT_DIR%/}/$NAME_REMOTE_DUMP_DIR"
 
 ## Подключение функций
-source ./functions/logging.sh
-source ./functions/connection.sh
-source ./functions/databases_dump_create.sh
-source ./functions/rsync_files_copy.sh
+source "$SCRIPT_DIR/functions/logging.sh"
+source "$SCRIPT_DIR/functions/connection.sh"
+source "$SCRIPT_DIR/functions/databases_dump_create.sh"
+source "$SCRIPT_DIR/functions/rsync_files_copy.sh"
 
 ### ============================================================
 ### ИНИЦИАЛИЗАЦИЯ
